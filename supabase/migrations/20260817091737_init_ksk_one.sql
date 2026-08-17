@@ -29,73 +29,104 @@ create table public.ksk_members (
     (role = 'child' and child_slug in ('khoai', 'san', 'kem'))
     or (role <> 'child' and child_slug is null)
   ),
-  unique (family_id, child_slug)
+  constraint ksk_members_family_child_slug_unique unique (family_id, child_slug),
+  constraint ksk_members_family_member_unique unique (family_id, id)
 );
 
 create table public.ksk_tasks (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,
-  child_id uuid not null references public.ksk_members (id) on delete restrict,
+  child_id uuid not null,
   title text not null check (char_length(title) between 1 and 160),
   description text not null default '',
   due_at timestamptz,
   status public.ksk_task_status not null default 'todo',
-  created_by uuid not null references public.ksk_members (id) on delete restrict,
-  verified_by uuid references public.ksk_members (id) on delete restrict,
+  created_by uuid not null,
+  verified_by uuid,
   verified_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint ksk_tasks_verified_check check (
     (status = 'verified' and verified_by is not null and verified_at is not null)
     or (status <> 'verified' and verified_by is null and verified_at is null)
-  )
+  ),
+  constraint ksk_tasks_family_task_unique unique (family_id, id),
+  constraint ksk_tasks_child_fkey foreign key (family_id, child_id)
+    references public.ksk_members (family_id, id) on delete restrict,
+  constraint ksk_tasks_created_by_fkey foreign key (family_id, created_by)
+    references public.ksk_members (family_id, id) on delete restrict,
+  constraint ksk_tasks_verified_by_fkey foreign key (family_id, verified_by)
+    references public.ksk_members (family_id, id) on delete restrict
 );
 
 create table public.ksk_events (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,
-  child_id uuid not null references public.ksk_members (id) on delete restrict,
+  child_id uuid not null,
   title text not null check (char_length(title) between 1 and 160),
   description text not null default '',
   location text not null default '',
   starts_at timestamptz not null,
   ends_at timestamptz not null,
-  created_by uuid not null references public.ksk_members (id) on delete restrict,
+  created_by uuid not null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
-  constraint ksk_events_time_check check (ends_at > starts_at)
+  constraint ksk_events_time_check check (ends_at > starts_at),
+  constraint ksk_events_child_fkey foreign key (family_id, child_id)
+    references public.ksk_members (family_id, id) on delete restrict,
+  constraint ksk_events_created_by_fkey foreign key (family_id, created_by)
+    references public.ksk_members (family_id, id) on delete restrict
 );
 
 create table public.ksk_stars (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,
-  child_id uuid not null references public.ksk_members (id) on delete restrict,
-  task_id uuid references public.ksk_tasks (id) on delete set null,
+  child_id uuid not null,
+  task_id uuid,
   amount smallint not null check (amount between 1 and 100),
   reason text not null check (char_length(reason) between 1 and 240),
-  awarded_by uuid not null references public.ksk_members (id) on delete restrict,
-  created_at timestamptz not null default now()
+  awarded_by uuid not null,
+  created_at timestamptz not null default now(),
+  constraint ksk_stars_child_fkey foreign key (family_id, child_id)
+    references public.ksk_members (family_id, id) on delete restrict,
+  constraint ksk_stars_task_fkey foreign key (family_id, task_id)
+    references public.ksk_tasks (family_id, id) on delete restrict,
+  constraint ksk_stars_awarded_by_fkey foreign key (family_id, awarded_by)
+    references public.ksk_members (family_id, id) on delete restrict
 );
 
 create table public.ksk_inbox (
   id uuid primary key default gen_random_uuid(),
   family_id uuid not null,
-  child_id uuid references public.ksk_members (id) on delete restrict,
+  child_id uuid,
   kind text not null default 'note' check (kind in ('note', 'task', 'event')),
   title text not null check (char_length(title) between 1 and 160),
   content text not null default '',
   processed_at timestamptz,
-  created_by uuid not null references public.ksk_members (id) on delete restrict,
-  created_at timestamptz not null default now()
+  created_by uuid not null,
+  created_at timestamptz not null default now(),
+  constraint ksk_inbox_child_fkey foreign key (family_id, child_id)
+    references public.ksk_members (family_id, id) on delete restrict,
+  constraint ksk_inbox_created_by_fkey foreign key (family_id, created_by)
+    references public.ksk_members (family_id, id) on delete restrict
 );
 
-create index ksk_members_auth_user_id_idx on public.ksk_members (auth_user_id);
 create index ksk_members_family_role_idx on public.ksk_members (family_id, role);
 create index ksk_tasks_family_child_status_idx on public.ksk_tasks (family_id, child_id, status);
+create index ksk_tasks_child_id_idx on public.ksk_tasks (child_id);
+create index ksk_tasks_created_by_idx on public.ksk_tasks (created_by);
+create index ksk_tasks_verified_by_idx on public.ksk_tasks (verified_by) where verified_by is not null;
 create index ksk_tasks_due_at_idx on public.ksk_tasks (due_at) where due_at is not null;
 create index ksk_events_family_child_starts_idx on public.ksk_events (family_id, child_id, starts_at);
+create index ksk_events_child_id_idx on public.ksk_events (child_id);
+create index ksk_events_created_by_idx on public.ksk_events (created_by);
 create index ksk_stars_family_child_created_idx on public.ksk_stars (family_id, child_id, created_at desc);
+create index ksk_stars_child_id_idx on public.ksk_stars (child_id);
+create index ksk_stars_task_id_idx on public.ksk_stars (task_id) where task_id is not null;
+create index ksk_stars_awarded_by_idx on public.ksk_stars (awarded_by);
 create index ksk_inbox_family_processed_idx on public.ksk_inbox (family_id, processed_at);
+create index ksk_inbox_child_id_idx on public.ksk_inbox (child_id) where child_id is not null;
+create index ksk_inbox_created_by_idx on public.ksk_inbox (created_by);
 
 create function ksk_private.current_member_id()
 returns uuid
@@ -296,7 +327,10 @@ using (
 create policy ksk_tasks_parent_insert
 on public.ksk_tasks for insert
 to authenticated
-with check ((select ksk_private.is_parent_of(family_id)));
+with check (
+  (select ksk_private.is_parent_of(family_id))
+  and created_by = (select ksk_private.current_member_id())
+);
 
 create policy ksk_tasks_update
 on public.ksk_tasks for update
@@ -337,7 +371,10 @@ using (
 create policy ksk_events_parent_insert
 on public.ksk_events for insert
 to authenticated
-with check ((select ksk_private.is_parent_of(family_id)));
+with check (
+  (select ksk_private.is_parent_of(family_id))
+  and created_by = (select ksk_private.current_member_id())
+);
 
 create policy ksk_events_parent_update
 on public.ksk_events for update
@@ -364,7 +401,10 @@ using (
 create policy ksk_stars_parent_insert
 on public.ksk_stars for insert
 to authenticated
-with check ((select ksk_private.is_parent_of(family_id)));
+with check (
+  (select ksk_private.is_parent_of(family_id))
+  and awarded_by = (select ksk_private.current_member_id())
+);
 
 create policy ksk_stars_parent_update
 on public.ksk_stars for update
@@ -391,7 +431,10 @@ using (
 create policy ksk_inbox_parent_insert
 on public.ksk_inbox for insert
 to authenticated
-with check ((select ksk_private.is_parent_of(family_id)));
+with check (
+  (select ksk_private.is_parent_of(family_id))
+  and created_by = (select ksk_private.current_member_id())
+);
 
 create policy ksk_inbox_parent_update
 on public.ksk_inbox for update
@@ -427,7 +470,8 @@ as $$
 declare
   viewer_family_id uuid;
 begin
-  if (select auth.uid()) is null or ksk_private.current_role() <> 'display' then
+  if (select auth.uid()) is null
+    or ksk_private.current_role() is distinct from 'display' then
     raise exception 'KSK_DISPLAY_ACCESS_REQUIRED' using errcode = '42501';
   end if;
 
