@@ -61,12 +61,18 @@ Project Supabase `KSK One` đã được tạo tại Singapore (`rapbhnhrwfvutoe
 
 Năm tài khoản thử nghiệm cho bố mẹ, TV và ba con đã được tạo trực tiếp trong Supabase Auth. Luồng RLS đã được kiểm tra bằng từng vai trò: bố mẹ quản lý toàn bộ gia đình, mỗi con chỉ thấy dữ liệu của mình, con không thể sửa nội dung nhiệm vụ, và TV không đọc được bảng gốc. Email/mật khẩu tài khoản không được lưu trong repository.
 
-## Deploy preview
+## Deploy Cloudflare
 
 ```text
 npm run build
-npx wrangler deploy --temporary
+npx wrangler deploy --strict
 ```
 
-Preview tạm thời không dùng domain production. Khi Cloudflare account được kết nối, branch này sẽ được deploy thành môi trường preview ổn định trước khi merge.
+Worker `ksk-one-preview` đã được liên kết với tài khoản Cloudflare của gia đình và triển khai ổn định tại:
+
+```text
+https://ksk-one-preview.ducanh2212.workers.dev
+```
+
+Trước khi build, môi trường triển khai phải có `VITE_SUPABASE_URL` và `VITE_SUPABASE_PUBLISHABLE_KEY`. Không dùng `--temporary`, vì deployment tạm sẽ hết hiệu lực nếu không được nhận vào một tài khoản Cloudflare.
 
