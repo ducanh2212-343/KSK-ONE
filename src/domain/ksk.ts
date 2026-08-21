@@ -52,6 +52,27 @@ export interface DashboardData {
   stars: StarEntry[]
 }
 
+export interface ChildDashboardData {
+  member: Member
+  tasks: KskTask[]
+  events: KskEvent[]
+  stars: StarEntry[]
+}
+
+export interface DisplayFeedItem {
+  memberId: string
+  slug: ChildSlug
+  displayName: string
+  color: string
+  currentActivity: string | null
+  currentStartsAt: string | null
+  currentEndsAt: string | null
+  nextActivity: string | null
+  nextStartsAt: string | null
+  unfinishedTasks: number
+  generatedAt: string
+}
+
 export interface TaskDraft {
   id?: string
   childId: string
@@ -86,4 +107,8 @@ export const taskStatusLabels: Record<TaskStatus, string> = {
 }
 
 export const childOrder: ChildSlug[] = ['khoai', 'san', 'kem']
+
+export function isChildSlug(value: string | undefined): value is ChildSlug {
+  return childOrder.includes(value as ChildSlug)
+}
 
