@@ -57,7 +57,7 @@ Migration đầu tiên nằm trong `supabase/migrations/`. Migration này:
 - Chặn display user đọc trực tiếp bảng gốc; RPC TV chỉ trả dữ liệu đã loại bỏ trường nhạy cảm.
 - Thêm các bảng nhiệm vụ, sự kiện và sao vào Supabase Realtime publication.
 
-Migration chưa được áp dụng online vì việc tạo Supabase project KSK One riêng có chi phí 10 USD/tháng và cần xác nhận rõ trước khi tạo.
+Project Supabase `KSK One` đã được tạo tại Singapore (`rapbhnhrwfvutoefkifa`) và các migration đã được áp dụng online. Các migration bổ sung thu hồi quyền mặc định có thể vượt RLS, thêm chỉ mục khóa ngoại ghép và khởi tạo hồ sơ gia đình; email/mật khẩu tài khoản không được lưu trong repository.
 
 ## Deploy preview
 
