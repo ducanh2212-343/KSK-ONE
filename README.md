@@ -10,7 +10,7 @@ Giai đoạn 1 đã merge vào `main`. Giai đoạn 2 được phát triển tr�
 - Tạo/sửa nhiệm vụ và sự kiện.
 - Theo dõi việc chưa làm, con báo đã làm và việc đã xác nhận.
 - Bố mẹ xác nhận hoàn thành, huỷ nhiệm vụ và trao Sao Xứng Đáng.
-- Chế độ demo bằng `localStorage` để kiểm thử UI trước khi có Supabase project riêng.
+- Chế độ demo bằng `localStorage` vẫn được giữ làm phương án kiểm thử UI độc lập.
 - Migration Supabase cho các bảng `ksk_*`, RLS và Realtime.
 - Cấu hình Cloudflare Workers Static Assets cho SPA.
 - Màn hình riêng của Khoai, Sắn và Kem tại `/ksk/child/khoai`, `/ksk/child/san`, `/ksk/child/kem`.
@@ -57,7 +57,9 @@ Migration đầu tiên nằm trong `supabase/migrations/`. Migration này:
 - Chặn display user đọc trực tiếp bảng gốc; RPC TV chỉ trả dữ liệu đã loại bỏ trường nhạy cảm.
 - Thêm các bảng nhiệm vụ, sự kiện và sao vào Supabase Realtime publication.
 
-Project Supabase `KSK One` đã được tạo tại Singapore (`rapbhnhrwfvutoefkifa`) và các migration đã được áp dụng online. Các migration bổ sung thu hồi quyền mặc định có thể vượt RLS, thêm chỉ mục khóa ngoại ghép và khởi tạo hồ sơ gia đình; email/mật khẩu tài khoản không được lưu trong repository.
+Project Supabase `KSK One` đã được tạo tại Singapore (`rapbhnhrwfvutoefkifa`) và các migration đã được áp dụng online. Các migration bổ sung thu hồi quyền mặc định có thể vượt RLS, thêm chỉ mục khóa ngoại ghép, khởi tạo hồ sơ gia đình và khóa tài khoản TV vào RPC dữ liệu đã làm sạch.
+
+Năm tài khoản thử nghiệm cho bố mẹ, TV và ba con đã được tạo trực tiếp trong Supabase Auth. Luồng RLS đã được kiểm tra bằng từng vai trò: bố mẹ quản lý toàn bộ gia đình, mỗi con chỉ thấy dữ liệu của mình, con không thể sửa nội dung nhiệm vụ, và TV không đọc được bảng gốc. Email/mật khẩu tài khoản không được lưu trong repository.
 
 ## Deploy preview
 

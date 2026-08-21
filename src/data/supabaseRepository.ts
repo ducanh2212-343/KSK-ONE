@@ -204,9 +204,6 @@ export class SupabaseRepository implements KskRepository {
 
   async loadDisplay(): Promise<DisplayFeedItem[]> {
     const client = requireClient()
-    const actor = await currentActor()
-    if (actor.role !== 'display') throw new Error('Tài khoản này không có quyền mở màn hình TV.')
-
     const { data, error } = await client.rpc('ksk_get_display_feed')
     raise(error)
     const colors: Record<ChildSlug, string> = {
