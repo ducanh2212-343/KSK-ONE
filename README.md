@@ -4,7 +4,7 @@ Web app quản lý lịch học, nhiệm vụ và sự phát triển của Khoai
 
 ## Trạng thái hiện tại
 
-Giai đoạn 1 đang triển khai trên branch `codex/ksk-one-phase-1`:
+Giai đoạn 1 đã merge vào `main`. Giai đoạn 2 được phát triển trên branch `codex/ksk-one-phase-2`:
 
 - Màn hình bố mẹ responsive tại `/ksk/parent`.
 - Tạo/sửa nhiệm vụ và sự kiện.
@@ -13,8 +13,11 @@ Giai đoạn 1 đang triển khai trên branch `codex/ksk-one-phase-1`:
 - Chế độ demo bằng `localStorage` để kiểm thử UI trước khi có Supabase project riêng.
 - Migration Supabase cho các bảng `ksk_*`, RLS và Realtime.
 - Cấu hình Cloudflare Workers Static Assets cho SPA.
-
-Các route `/ksk/child/:slug` và `/ksk/display` mới là trang giữ chỗ, sẽ làm ở Giai đoạn 2.
+- Màn hình riêng của Khoai, Sắn và Kem tại `/ksk/child/khoai`, `/ksk/child/san`, `/ksk/child/kem`.
+- Trẻ chỉ chuyển nhiệm vụ sang `in_progress` hoặc `child_reported_done`.
+- Màn hình TV ba cột tại `/ksk/display`, có hoạt động hiện tại, tiếp theo, số việc chưa xong và đồng hồ đếm ngược.
+- Cảnh báo toàn màn hình trong phút đầu tiên khi hoạt động bắt đầu.
+- Đồng bộ tức thời giữa các tab ở chế độ demo và Supabase Realtime cho dữ liệu người dùng được RLS cho phép.
 
 ## Công nghệ
 
@@ -54,7 +57,7 @@ Migration đầu tiên nằm trong `supabase/migrations/`. Migration này:
 - Chặn display user đọc trực tiếp bảng gốc; RPC TV chỉ trả dữ liệu đã loại bỏ trường nhạy cảm.
 - Thêm các bảng nhiệm vụ, sự kiện và sao vào Supabase Realtime publication.
 
-Migration chưa được áp dụng online vì chưa có Supabase project KSK One riêng và việc tạo project cần xác nhận organization/chi phí.
+Migration chưa được áp dụng online vì việc tạo Supabase project KSK One riêng có chi phí 10 USD/tháng và cần xác nhận rõ trước khi tạo.
 
 ## Deploy preview
 
