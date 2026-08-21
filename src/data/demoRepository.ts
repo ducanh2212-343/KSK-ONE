@@ -1,5 +1,8 @@
 import type {
+  ChildDashboardData,
+  ChildSlug,
   DashboardData,
+  DisplayFeedItem,
   EventDraft,
   KskEvent,
   KskTask,
@@ -7,10 +10,13 @@ import type {
   StarDraft,
   StarEntry,
   TaskDraft,
+  TaskStatus,
 } from '../domain/ksk'
+import { canChildTransition } from '../domain/taskTransitions'
 import type { KskRepository } from './kskRepository'
 
-const storageKey = 'ksk-one-demo-v1'
+const storageKey = 'ksk-one-demo-v2'
+const broadcastName = 'ksk-one-demo-realtime'
 
 const members: Member[] = [
   {
@@ -142,14 +148,69 @@ export class DemoRepository implements KskRepository {
   readonly mode = 'demo' as const
   private state: DashboardData
   private listeners = new Set<() => void>()
+  private channel: BroadcastChannel | null = null
 
   constructor() {
     const saved = globalThis.localStorage?.getItem(storageKey)
     this.state = saved ? (JSON.parse(saved) as DashboardData) : seedState()
+
+    if (typeof globalThis.addEventListener === 'function') {
+      globalThis.addEventListener('storage', (event) => {
+        if (event.key === storageKey && event.newValue) this.receive(event.newValue)
+      })
+    }
+
+    if (typeof globalThis.BroadcastChannel !== 'undefined') {
+      this.channel = new BroadcastChannel(broadcastName)
+      this.channel.addEventListener('message', () => {
+        const latest = globalThis.localStorage?.getItem(storageKey)
+        if (latest) this.receive(latest)
+      })
+    }
   }
 
   async loadDashboard() {
     return clone(this.state)
+  }
+
+  async loadChild(slug: ChildSlug): Promise<ChildDashboardData> {
+    const member = this.state.members.find((item) => item.slug === slug)
+    if (!member) throw new Error('Không tìm thấy hồ sơ của con.')
+
+    return clone({
+      member,
+      tasks: this.state.tasks.filter((task) => task.childId === member.id),
+      events: this.state.events.filter((event) => event.childId === member.id),
+      stars: this.state.stars.filter((entry) => entry.childId === member.id),
+    })
+  }
+
+  async loadDisplay(): Promise<DisplayFeedItem[]> {
+    const now = Date.now()
+    return clone(this.state.members.map((member) => {
+      const events = this.state.events
+        .filter((event) => event.childId === member.id)
+        .sort((left, right) => left.startsAt.localeCompare(right.startsAt))
+      const current = events.find((event) => new Date(event.startsAt).getTime() <= now && now < new Date(event.endsAt).getTime())
+      const next = events.find((event) => new Date(event.startsAt).getTime() > now)
+      const unfinishedTasks = this.state.tasks.filter(
+        (task) => task.childId === member.id && !['verified', 'cancelled'].includes(task.status),
+      ).length
+
+      return {
+        memberId: member.id,
+        slug: member.slug,
+        displayName: member.displayName,
+        color: member.color,
+        currentActivity: current?.title ?? null,
+        currentStartsAt: current?.startsAt ?? null,
+        currentEndsAt: current?.endsAt ?? null,
+        nextActivity: next?.title ?? null,
+        nextStartsAt: next?.startsAt ?? null,
+        unfinishedTasks,
+        generatedAt: new Date(now).toISOString(),
+      }
+    }))
   }
 
   async saveTask(draft: TaskDraft) {
@@ -192,6 +253,18 @@ export class DemoRepository implements KskRepository {
     this.commit()
   }
 
+  async updateTaskStatus(
+    taskId: string,
+    status: Extract<TaskStatus, 'in_progress' | 'child_reported_done'>,
+  ) {
+    const current = this.state.tasks.find((item) => item.id === taskId)
+    if (!current) throw new Error('Không tìm thấy nhiệm vụ cần cập nhật.')
+    if (!canChildTransition(current.status, status)) throw new Error('Không thể chuyển nhiệm vụ sang trạng thái này.')
+    current.status = status
+    current.updatedAt = new Date().toISOString()
+    this.commit()
+  }
+
   async verifyTask(task: KskTask) {
     const current = this.state.tasks.find((item) => item.id === task.id)
     if (!current) throw new Error('Không tìm thấy nhiệm vụ cần xác nhận.')
@@ -228,6 +301,12 @@ export class DemoRepository implements KskRepository {
 
   private commit() {
     globalThis.localStorage?.setItem(storageKey, JSON.stringify(this.state))
+    this.listeners.forEach((listener) => listener())
+    this.channel?.postMessage({ type: 'changed' })
+  }
+
+  private receive(value: string) {
+    this.state = JSON.parse(value) as DashboardData
     this.listeners.forEach((listener) => listener())
   }
 }

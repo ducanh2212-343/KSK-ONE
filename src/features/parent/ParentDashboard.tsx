@@ -332,7 +332,7 @@ export function ParentDashboard() {
       </section>
 
       <footer className="app-footer">
-        <span>KSK One · Giai đoạn 1</span>
+        <span>KSK One · Giai đoạn 2</span>
         <span>Dữ liệu riêng tư không hiển thị trên màn hình TV.</span>
       </footer>
 
